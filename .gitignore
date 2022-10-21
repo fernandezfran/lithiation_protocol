@@ -5,3 +5,7 @@ charges.bin
 LixSi64.gen
 LixSi64.xyz
 md.out
+dftb+npt/*.xyz
+dftb+npt/*.out
+dftb+min/*.xyz
+dftb+min/*.out

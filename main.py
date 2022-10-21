@@ -25,7 +25,7 @@ from io_dftb_plus import read_md_out, write_gen_format
 
 def main():
     # grid 1d distance in Angstrom
-    dx = 1
+    dx = 0.1
 
     # get the last frame of a trajectory and wrap the frame inside the box
     frames = exma.read_xyz("a-Si64.xyz")
@@ -59,15 +59,15 @@ def main():
             [df[kbox][min_press_frame] for kbox in ("xbox", "ybox", "zbox")]
         )
 
+        # save files of interest
+        os.system(f"mv md.out dftb+npt/md.Li{nli}Si64.out")
+        os.system(f"mv LixSi64.xyz dftb+npt/Li{nli}Si64.xyz")
+
         # add 3 Li atoms and expand frame
         for i in range(3):
             dmax, frame = lithiation_step(frame, frame.box[0], dx)
             nli += 1
         x = nli / nsi
-
-        # save files of interest, delete the others
-        os.system(f"mv md.out dftb+npt/md.Li{nli}Si64.out")
-        os.system(f"mv LixSi64.xyz dftb+npt/Li{nli}Si64.xyz")
 
 
 if __name__ == "__main__":
