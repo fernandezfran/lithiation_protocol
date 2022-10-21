@@ -46,7 +46,7 @@ Driver = VelocityVerlet{
     MovedAtoms = 1:-1
     Thermostat = Berendsen {
         Temperature [Kelvin] = TemperatureProfile {
-            constant 10000 300.0
+            constant 100 300.0
         } 
         Timescale [fs] = 10
         AdaptFillingTemp = Yes
