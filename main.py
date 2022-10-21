@@ -5,9 +5,10 @@
 We start with an amorphous Si structure and follow the protocol:
 1. add a Li atom at the center of the largest spherical void,
 2. increase the volume and scale the coordinates,
-3. simulate 10ps with Berendsen NPT,
-4. select the frame with minimum absolute pressure,
-5. with x defined as number of Li atoms per Si atoms if x < 3.75 goto point 1
+3. perform a local LBFGS minimization,
+4. simulate 10ps with Berendsen NPT,
+5. select the frame with minimum absolute pressure,
+6. with x defined as number of Li atoms per Si atoms if x < 3.75 goto point 1
 else finish.
 
 To make the process faster, 3 atoms of lithium are added at a time and expanding
@@ -42,9 +43,11 @@ def main():
 
     x = nli / nsi
     while x < 3.75:
-        # write genFormat file for dftb+ and run NPT simulation
+        # write genFormat file for dftb+
         write_gen_format(frame, "LixSi64.gen")
-        os.system("dftb+")
+
+        # run LBFGS minimization and Berendsen NPT
+        os.system("bash dftb+run.sh")
 
         # get frame with minimum pressure
         df = read_md_out()
@@ -63,9 +66,8 @@ def main():
         x = nli / nsi
 
         # save files of interest, delete the others
-        os.system(f"mv md.out md.Li{nli}Si64.out")
-        os.system(f"mv LixSi64.xyz Li{nli}Si64.xyz")
-        os.system("rm detailed.out charges.bin LixSi64.gen")
+        os.system(f"mv md.out dftb+npt/md.Li{nli}Si64.out")
+        os.system(f"mv LixSi64.xyz dftb+npt/Li{nli}Si64.xyz")
 
 
 if __name__ == "__main__":
