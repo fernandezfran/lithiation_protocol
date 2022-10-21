@@ -78,17 +78,3 @@ def lithiation_step(frame, box, dx):
     frame.z *= expand_factor
 
     return dmax, frame
-
-
-if __name__ == "__main__":
-    box = 10.937456
-
-    # get the last frame of a trajectory
-    frames = exma.read_xyz("a-Si64.xyz")
-    frame = frames[-1]
-
-    # wrap the frame inside the box
-    frame.box = np.full(3, box)
-    frame._wrap()
-
-    dmax, frame = lithiation_step(frame, box, 0.5)
