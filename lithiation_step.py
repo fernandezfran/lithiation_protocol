@@ -1,14 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Slightly similar Chevrier and Dahn protocol for lithiation of a-Si.
-
-I only consider the first two steps:
-1. add a Li atom at the center of the largest spherical void,
-2. increase the volume and scale the coordinates,
-the rest (volume minimization, energy, etc.) are replaced by a NPT simulation.
-
-https://doi.org/10.1149/1.3111037 is the paper where the protocol is established.
-"""
+"""Two first steps of the lithiation of amorphous silicon protocol."""
 import exma
 import numpy as np
 
