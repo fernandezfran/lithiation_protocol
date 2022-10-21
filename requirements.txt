@@ -1,0 +1,3 @@
+exma==0.5.7
+numpy
+pandas
