@@ -11,10 +11,10 @@ Hamiltonian = DFTB {
     SCCTolerance = 1.0e-8
     MaxSCCIterations = 10000
     SlaterKosterFiles = {
-        Si-Si = "B-params/Si-Si.skf"
-        Si-Li = "B-params/Si-Li.skf"
-        Li-Si = "B-params/Li-Si.skf"
-        Li-Li = "B-params/Li-Li.skf"
+        Si-Si = "../B-params/Si-Si.skf"
+        Si-Li = "../B-params/Si-Li.skf"
+        Li-Si = "../B-params/Li-Si.skf"
+        Li-Li = "../B-params/Li-Li.skf"
     }
     MaxAngularMomentum {
         Si = "p"
