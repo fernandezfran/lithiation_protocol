@@ -58,6 +58,7 @@ def main():
         frame.box = np.array(
             [df[kbox][min_press_frame] for kbox in ("xbox", "ybox", "zbox")]
         )
+        frame._wrap()
 
         # save files of interest
         os.system(f"mv md.out dftb+npt/md.Li{nli}Si64.out")
