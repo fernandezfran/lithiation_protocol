@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 """Full lithiation of amorphous silicon using DFTB+.
 
-We start with an amorphous Si structure and follow the protocol:
+We start with an amorphized silicon structure and follow the next protocol:
+
 1. add a Li atom at the center of the largest spherical void,
 2. increase the volume and scale the coordinates,
 3. perform a local LBFGS minimization,

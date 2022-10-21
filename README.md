@@ -1,9 +1,7 @@
 # Lithiation of amorphous silicon
 
-Slightly similar [Chevrier and Dahn protocol](https://doi.org/10.1149/1.3111037)
-for lithiation of a-Si.
+We start with an amorphized silicon structure and follow the next protocol:
 
-We start with an amorphous Si structure and follow the protocol:
 1. add a Li atom at the center of the largest spherical void,
 2. increase the volume and scale the coordinates,
 3. perform a local LBFGS minimization
@@ -13,3 +11,7 @@ We start with an amorphous Si structure and follow the protocol:
 
 To make the process faster, 3 atoms of lithium are added at a time and expanding
 in each one of them, this was checked with DFT which does not alter the results.
+
+This protocol is slightly similar to the one proposed by 
+[Chevrier and Dahn](https://doi.org/10.1149/1.3111037), also for the lithiation 
+of amorphous silicon.
