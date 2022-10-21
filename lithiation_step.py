@@ -48,10 +48,15 @@ def lithiation_step(frame, box, dx):
     dmax = dx
     for grid_point in grid3d:
         # get the distance (considering minimum image) to the closest atom
-        dmin = box
-        for atom in zip(frame.x, frame.y, frame.z):
-            d = np.linalg.norm([x - box * np.rint(x / box) for x in atom - grid_point])
-            dmin = d if d < dmin else dmin
+        frame_point = exma.core.AtomicSystem(
+            natoms=1,
+            box=np.full(3, box),
+            types=np.array(["Li"]),
+            x=np.array([grid_point[0]]),
+            y=np.array([grid_point[1]]),
+            z=np.array([grid_point[2]]),
+        )
+        dmin = np.min(exma.distances.pbc_distances(frame_point, frame))
 
         # get the largest min distance and the positions in the grid
         if dmin > dmax:
@@ -66,7 +71,7 @@ def lithiation_step(frame, box, dx):
     frame.z = np.append(frame.y, largest_pos[2])
 
     # increase the volume and scale all the coordinates
-    expand_factor = np.cbrt(box**3 + 16.05) / box
+    expand_factor = np.cbrt(box ** 3 + 16.05) / box
     frame.box *= expand_factor
     frame.x *= expand_factor
     frame.y *= expand_factor
@@ -86,4 +91,4 @@ if __name__ == "__main__":
     frame.box = np.full(3, box)
     frame._wrap()
 
-    dmax, frame = lithiation_step(frame, box, 1)
+    dmax, frame = lithiation_step(frame, box, 0.5)
