@@ -69,4 +69,6 @@ def lithiation_step(frame, box, dx):
     frame.y *= expand_factor
     frame.z *= expand_factor
 
+    del grid1d, grid3d
+
     return dmax, frame

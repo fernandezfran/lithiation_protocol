@@ -26,7 +26,7 @@ from io_dftb_plus import read_md_out, write_gen_format
 
 def main():
     # grid 1d distance in Angstrom
-    dx = 0.1
+    dx = 0.05
 
     # get the last frame of a trajectory and wrap the frame inside the box
     frames = exma.read_xyz("a-Si64.xyz")

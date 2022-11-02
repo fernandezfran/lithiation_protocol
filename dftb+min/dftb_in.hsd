@@ -9,7 +9,7 @@ Geometry = GenFormat{
 Hamiltonian = DFTB {
     SCC = Yes
     SCCTolerance = 1.0e-8
-    MaxSCCIterations = 10000
+    MaxSCCIterations = 25000
     SlaterKosterFiles = {
         Si-Si = "../B-params/Si-Si.skf"
         Si-Li = "../B-params/Si-Li.skf"
@@ -44,7 +44,7 @@ Hamiltonian = DFTB {
 Driver = LBFGS {
     MovedAtoms = 1:-1
     MaxForceComponent = 1.0E-4
-    MaxSteps = 10000
+    MaxSteps = 25000
     LatticeOpt = No
     OutputPrefix = "LixSi64"
 }
