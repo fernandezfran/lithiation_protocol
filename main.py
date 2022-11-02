@@ -25,9 +25,6 @@ from io_dftb_plus import read_md_out, write_gen_format
 
 
 def main():
-    # grid 1d distance in Angstrom
-    dx = 0.05
-
     # get the last frame of a trajectory and wrap the frame inside the box
     frames = exma.read_xyz("a-Si64.xyz")
     frame = frames[-1]
@@ -39,7 +36,7 @@ def main():
     nsi = frame.natoms
 
     # add a Li atom and expand frame
-    dmax, frame = lithiation_step(frame, 10.937456, dx)
+    dmax, frame = lithiation_step(frame, 10.937456)
     nli += 1
 
     x = nli / nsi
@@ -48,7 +45,7 @@ def main():
         write_gen_format(frame, "LixSi64.gen")
 
         # run LBFGS minimization and Berendsen NPT
-        os.system("bash dftb+run.sh")
+        os.system("bash run.sh")
 
         # get frame with minimum pressure
         df = read_md_out()
@@ -67,7 +64,7 @@ def main():
 
         # add 3 Li atoms and expand frame
         for i in range(3):
-            dmax, frame = lithiation_step(frame, frame.box[0], dx)
+            dmax, frame = lithiation_step(frame, frame.box[0])
             nli += 1
         x = nli / nsi
 
