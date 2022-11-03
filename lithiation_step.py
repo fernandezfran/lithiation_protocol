@@ -33,13 +33,19 @@ def lithiation_step(frame, box):
         (exma.core.AtomicSystem) with the new structure
     """
     # find the voronoi vertices inside the box with pbc
+    ## it is necesary to replicate the frame to consider pbc
     replicated_frame = exma.io.positions.replicate(frame, [3, 3, 3])
     x = replicated_frame.x
     y = replicated_frame.y
     z = replicated_frame.z
 
+    ## voronoi calculation with a point in each atom position
     voronoi = scipy.spatial.Voronoi(np.array((x, y, z)).T)
 
+    ## get the vertices of the voronoi diagram, which corresponds to the centers
+    ## of the Delaunay triangulation spheres, in the central box (the one that
+    ## is take in into account the pbc) and pass them from the interval
+    ## [box, 2*box) to [0, box) in each direction
     vcenter = np.full(3, box)
     mask = (voronoi.vertices >= box) & (voronoi.vertices < 2 * box)
     vertices = [v - vcenter for v, m in zip(voronoi.vertices, mask) if m.all()]
