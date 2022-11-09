@@ -1,9 +1,9 @@
 #!bin/bash
-mv LixSi64.gen dftb+min/
-cd dftb+min/
+mv LixSi64.gen lbfgs/
+cd lbfgs/
 dftb+
-cp LixSi64.gen ../dftb+npt/
-cd ../dftb+npt/
+cp LixSi64.gen ../npt/
+cd ../npt/
 dftb+
 cp md.out ../
 cp LixSi64.xyz ../

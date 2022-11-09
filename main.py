@@ -16,6 +16,7 @@ To make the process faster, 3 atoms of lithium are added at a time and expanding
 in each one of them, this was checked with DFT which does not alter the results.
 """
 import os
+import subprocess
 
 import exma
 import numpy as np
@@ -45,7 +46,7 @@ def main():
         write_gen_format(frame, "LixSi64.gen")
 
         # run LBFGS minimization and Berendsen NPT
-        os.system("bash run.sh")
+        subprocess.run(["bash", "run.sh"])
 
         # get frame with minimum pressure
         df = read_md_out()
