@@ -69,6 +69,8 @@ def lithiation_step(frame, box):
             dmax = dmin
             largest_pos = vpoint
 
+        del frame_point
+
     # add a Li atom to the frame
     frame.natoms += 1
     frame.types = np.append(frame.types, "Li")
@@ -82,5 +84,7 @@ def lithiation_step(frame, box):
     frame.x *= expand_factor
     frame.y *= expand_factor
     frame.z *= expand_factor
+
+    del replicated_frame, x, y, z, voronoi
 
     return dmax, frame
