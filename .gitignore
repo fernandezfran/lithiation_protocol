@@ -10,3 +10,4 @@ dftb+npt/*.out
 dftb+min/*.xyz
 dftb+min/*.out
 nohup.out
+sjob.sh
