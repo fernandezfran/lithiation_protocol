@@ -60,8 +60,8 @@ def main():
         frame._wrap()
 
         # save files of interest
-        os.system(f"mv md.out dftb+npt/md.Li{nli}Si64.out")
-        os.system(f"mv LixSi64.xyz dftb+npt/Li{nli}Si64.xyz")
+        os.system(f"mv md.out npt/md.Li{nli}Si64.out")
+        os.system(f"mv LixSi64.xyz npt/Li{nli}Si64.xyz")
 
         # add 3 Li atoms and expand frame
         for i in range(3):
