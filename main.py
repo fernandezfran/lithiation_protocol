@@ -26,30 +26,20 @@ from lithiation_step import lithiation_step
 from io_dftb_plus import read_md_out, write_gen_format
 
 
-def full_lithiation():
-    # get the last frame of a trajectory and wrap the frame inside the box
-    frames = exma.read_xyz("a-Si64.xyz")
-    frame = frames[-1]
-    frame.box = np.full(3, 10.937456)
-    frame._wrap()
+class Lithiation:
+    """Lithiation protocol.
 
-    # initial number of Li and Si atoms
-    nli = 0
-    nsi = frame.natoms
+    Parameters
+    ----------
+    nsteps : int, default=3
+        number of simultaneous lithium insertions
+    """
 
-    # add a Li atom and expand frame
-    dmax, frame = lithiation_step(frame, 10.937456)
-    nli += 1
+    def __init__(self, nsteps=3):
+        self.nsteps = nsteps
+        self.nsi = 64
 
-    x = nli / nsi
-    while x < 3.75:
-        # write genFormat file for dftb+
-        write_gen_format(frame, "LixSi64.gen")
-
-        # run LBFGS minimization and Berendsen NPT
-        subprocess.run(["bash", "run.sh"])
-
-        # get frame with minimum pressure
+    def _get_min_press_frame(self):
         df = read_md_out()
         min_press_frame = np.argmin(np.abs(df["press"].values))
 
@@ -58,58 +48,65 @@ def full_lithiation():
         frame.box = np.array(
             [df[kbox][min_press_frame] for kbox in ("xbox", "ybox", "zbox")]
         )
-        frame._wrap()
 
-        # save files of interest
-        os.system(f"mv md.out npt/md.Li{nli}Si64.out")
-        os.system(f"mv LixSi64.xyz npt/Li{nli}Si64.xyz")
+        return frame._wrap()
 
-        # add 3 Li atoms and expand frame
-        for i in range(3):
+    def _lithiate_nsteps(self, frame):
+        # add nsteps Li atoms and expand frame
+        for _ in range(self.nsteps):
             dmax, frame = lithiation_step(frame, frame.box[0])
-            nli += 1
-        x = nli / nsi
+            self.nli += 1
 
+        return frame
 
-def restart_from(structure):
-    # get the last structure and restart the lithiation
-    os.system(f"cp npt/md.{structure}.out md.out")
-    os.system(f"cp npt/{structure}.xyz LixSi64.xyz")
+    def run(self, structure=None):
+        """Run the full lithiation or restart from an structure.
 
-    # initial number of Li and Si atoms
-    frames = exma.read_xyz(f"LixSi64.xyz")
-    frame = frames[-1]
-    nli = frame._natoms_type(frame._mask_type("Li"))
-    nsi = frame._natoms_type(frame._mask_type("Si"))
+        Parameters
+        ----------
+        structure : str, default=None
+            name of the structure to restart from
+        """
+        if structure is not None:
+            # get the structure and restart the lithiation
+            os.system(f"cp npt/md.{structure}.out md.out")
+            os.system(f"cp npt/{structure}.xyz LixSi64.xyz")
 
-    x = nli / nsi
-    while x < 3.75:
-        # get frame with minimum pressure
-        df = read_md_out()
-        min_press_frame = np.argmin(np.abs(df["press"].values))
+            # initial number of Li atoms
+            frames = exma.read_xyz(f"LixSi64.xyz")
+            frame = frames[-1]
+            self.nli = frame._natoms_type(frame._mask_type("Li"))
 
-        frames = exma.read_xyz("LixSi64.xyz")
-        frame = frames[min_press_frame]
-        frame.box = np.array(
-            [df[kbox][min_press_frame] for kbox in ("xbox", "ybox", "zbox")]
-        )
-        frame._wrap()
+        else:
+            # initializate lithiation
+            frames = exma.read_xyz("a-Si64.xyz")
+            frame = frames[-1]
+            frame.box = np.full(3, 10.937456)
+            frame._wrap()
 
-        # save files of interest
-        os.system(f"mv md.out npt/md.Li{nli}Si64.out")
-        os.system(f"mv LixSi64.xyz npt/Li{nli}Si64.xyz")
+            # add a Li atom and expand frame
+            self.nli = 1
+            dmax, frame = lithiation_step(frame, 10.937456)
+            write_gen_format(frame, "LixSi64.gen")
+            subprocess.run(["bash", "run.sh"])
 
-        # add 3 Li atoms and expand frame
-        for i in range(3):
-            dmax, frame = lithiation_step(frame, frame.box[0])
-            nli += 1
-        x = nli / nsi
+        x = self.nli / self.nsi
+        while x < 3.75:
+            frame = self._get_min_press_frame()
 
-        # write genFormat file for dftb+
-        write_gen_format(frame, "LixSi64.gen")
+            # save files of interest
+            os.system(f"mv md.out npt/md.Li{self.nli}Si64.out")
+            os.system(f"mv LixSi64.xyz npt/Li{self.nli}Si64.xyz")
 
-        # run LBFGS minimization and Berendsen NPT
-        subprocess.run(["bash", "run.sh"])
+            frame = self._lithiate_nsteps(frame)
+
+            # write genFormat file for dftb+
+            write_gen_format(frame, "LixSi64.gen")
+
+            # run LBFGS minimization and Berendsen NPT
+            subprocess.run(["bash", "run.sh"])
+
+            x = self.nli / self.nsi
 
 
 def main():
@@ -122,12 +119,10 @@ def main():
         "--restart-from",
         help="restart from a given structure RESTART_FROM, e.g. Li55Si64",
     )
-
     args = parser.parse_args()
-    if args.restart_from:
-        restart_from(args.restart_from)
-    else:
-        full_lithiation()
+
+    Lithiation().run(args.restart_from)
+
 
 if __name__ == "__main__":
     main()
