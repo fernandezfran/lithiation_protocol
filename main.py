@@ -15,6 +15,7 @@ else finish.
 To make the process faster, 3 atoms of lithium are added at a time and expanding
 in each one of them, this was checked with DFT which does not alter the results.
 """
+import argparse
 import os
 import subprocess
 
@@ -25,7 +26,7 @@ from lithiation_step import lithiation_step
 from io_dftb_plus import read_md_out, write_gen_format
 
 
-def main():
+def full_lithiation():
     # get the last frame of a trajectory and wrap the frame inside the box
     frames = exma.read_xyz("a-Si64.xyz")
     frame = frames[-1]
@@ -69,6 +70,23 @@ def main():
             nli += 1
         x = nli / nsi
 
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Lithiate an amorphous structure, "
+        "by default from the beginning but can also be restarted from a given "
+        "structure"
+    )
+    parser.add_argument(
+        "--restart-from",
+        help="restart from a given structure RESTART_FROM, e.g. Li55Si64",
+    )
+
+    args = parser.parse_args()
+    if args.restart_from:
+        raise NotImplementedError
+    else:
+        full_lithiation()
 
 if __name__ == "__main__":
     main()
