@@ -31,11 +31,15 @@ class Lithiation:
 
     Parameters
     ----------
+    structure : str, default=None
+        name of the structure to restart from
+
     nsteps : int, default=3
         number of simultaneous lithium insertions
     """
 
-    def __init__(self, nsteps=3):
+    def __init__(self, structure=None, nsteps=3):
+        self.structure = structure
         self.nsteps = nsteps
         self.nsi = 64
 
@@ -59,15 +63,9 @@ class Lithiation:
 
         return frame
 
-    def run(self, structure=None):
-        """Run the full lithiation or restart from an structure.
-
-        Parameters
-        ----------
-        structure : str, default=None
-            name of the structure to restart from
-        """
-        if structure is not None:
+    def run(self):
+        """Run the full lithiation or restart from an structure."""
+        if self.structure is not None:
             # get the structure and restart the lithiation
             os.system(f"cp npt/md.{structure}.out md.out")
             os.system(f"cp npt/{structure}.xyz LixSi64.xyz")
@@ -121,7 +119,7 @@ def main():
     )
     args = parser.parse_args()
 
-    Lithiation().run(args.restart_from)
+    Lithiation(structure=args.restart_from, nsteps=3).run()
 
 
 if __name__ == "__main__":
