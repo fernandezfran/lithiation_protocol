@@ -71,6 +71,47 @@ def full_lithiation():
         x = nli / nsi
 
 
+def restart_from(structure):
+    # get the last structure and restart the lithiation
+    os.system(f"cp npt/md.{structure}.out md.out")
+    os.system(f"cp npt/{structure}.xyz LixSi64.xyz")
+
+    # initial number of Li and Si atoms
+    frames = exma.read_xyz(f"LixSi64.xyz")
+    frame = frames[-1]
+    nli = frame._natoms_type(frame._mask_type("Li"))
+    nsi = frame._natoms_type(frame._mask_type("Si"))
+
+    x = nli / nsi
+    while x < 3.75:
+        # get frame with minimum pressure
+        df = read_md_out()
+        min_press_frame = np.argmin(np.abs(df["press"].values))
+
+        frames = exma.read_xyz("LixSi64.xyz")
+        frame = frames[min_press_frame]
+        frame.box = np.array(
+            [df[kbox][min_press_frame] for kbox in ("xbox", "ybox", "zbox")]
+        )
+        frame._wrap()
+
+        # save files of interest
+        os.system(f"mv md.out npt/md.Li{nli}Si64.out")
+        os.system(f"mv LixSi64.xyz npt/Li{nli}Si64.xyz")
+
+        # add 3 Li atoms and expand frame
+        for i in range(3):
+            dmax, frame = lithiation_step(frame, frame.box[0])
+            nli += 1
+        x = nli / nsi
+
+        # write genFormat file for dftb+
+        write_gen_format(frame, "LixSi64.gen")
+
+        # run LBFGS minimization and Berendsen NPT
+        subprocess.run(["bash", "run.sh"])
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Lithiate an amorphous structure, "
@@ -84,7 +125,7 @@ def main():
 
     args = parser.parse_args()
     if args.restart_from:
-        raise NotImplementedError
+        restart_from(args.restart_from)
     else:
         full_lithiation()
 
