@@ -67,8 +67,8 @@ class Lithiation:
         """Run the full lithiation or restart from an structure."""
         if self.structure is not None:
             # get the structure and restart the lithiation
-            os.system(f"cp npt/md.{structure}.out md.out")
-            os.system(f"cp npt/{structure}.xyz LixSi64.xyz")
+            os.system(f"cp npt/md.{self.structure}.out md.out")
+            os.system(f"cp npt/{self.structure}.xyz LixSi64.xyz")
 
             # initial number of Li atoms
             frames = exma.read_xyz(f"LixSi64.xyz")
