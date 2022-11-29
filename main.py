@@ -38,7 +38,7 @@ class Lithiation:
         number of simultaneous lithium insertions
     """
 
-    def __init__(self, structure=None, nsteps=3):
+    def __init__(self, structure=None, nsteps=4):
         self.structure = structure
         self.nsteps = nsteps
         self.nsi = 64
@@ -119,7 +119,7 @@ def main():
     )
     args = parser.parse_args()
 
-    Lithiation(structure=args.restart_from, nsteps=3).run()
+    Lithiation(structure=args.restart_from, nsteps=4).run()
 
 
 if __name__ == "__main__":
