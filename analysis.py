@@ -1,10 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Different mechanical statistical analyses of the lithiation."""
+import os
+import subprocess
+
 import exma
+
 import matplotlib.pyplot as plt
 import matplotlib.colors
+
 import numpy as np
+
 import pandas as pd
 
 from io_dftb_plus import read_md_out
@@ -14,36 +20,55 @@ NSI = 64
 NLIMAX = 3.75 * NSI
 
 
-def color_fader(mix, first_color="#1f77b4", second_color="#2ca02c"):
+def _color_fader(mix, first_color="#1f77b4", second_color="#2ca02c"):
     c1 = np.array(matplotlib.colors.to_rgb(first_color))
     c2 = np.array(matplotlib.colors.to_rgb(second_color))
     return matplotlib.colors.to_hex((1 - mix) * c1 + mix * c2)
 
 
-def colormap():
-    colors = [color_fader(v) for v in np.linspace(0, 1, num=100)]
+def _colormap():
+    colors = [_color_fader(v) for v in np.linspace(0, 1, num=100)]
     return matplotlib.colors.ListedColormap(colors)
 
 
-def rdf_plot(nlis, path="npt/"):
+def _read_trajectories(path="npt/"):
+    """Read all the xyz files and md outs in `npt` directory."""
+    trajectories = [
+        exma.read_xyz(path + fname)
+        for fname in os.listdir(path)
+        if fname.endswith(".xyz")
+    ]
+
+    natoms = np.array([traj[0].natoms for traj in trajectories])
+    args = np.argsort(natoms)
+    trajectories = np.array(trajectories)[args]
+
+    info = []
+    for traj in trajectories:
+        nli = traj[0]._natoms_type(traj[0]._mask_type("Li"))
+        info.append(read_md_out(filename=path + f"md.Li{nli}Si{NSI}.out"))
+
+    return trajectories, info
+
+
+def rdf_plot(trajectories, info, each=5):
     """Plot the RDF of Si-Si for each lithium concentration."""
     fig, ax = plt.subplots()
-    cmap = colormap()
+    cmap = _colormap()
 
-    for nli in nlis:
-        prefix = f"Li{nli}Si{NSI}"
+    for k, (frames, thermo) in enumerate(zip(trajectories, info)):
 
-        thermo = read_md_out(path + "md." + prefix + ".out")
-        frames = exma.read_xyz(path + prefix + ".xyz")
+        if k % each == 0:
+            nli = frames[0]._natoms_type(frames[0]._mask_type("Li"))
 
-        for box, frame in zip(thermo["xbox"].values, frames):
-            frame.box = np.full(3, box)
+            for box, frame in zip(thermo["xbox"].values, frames):
+                frame.box = np.full(3, box)
 
-        rdf = exma.rdf.RadialDistributionFunction(
-            frames, type_c="Si", type_i="Si", rmax=5.0
-        )
-        rdf.calculate()
-        rdf.plot(ax=ax, plot_kws={"color": cmap(nli / NLIMAX)})
+            rdf = exma.rdf.RadialDistributionFunction(
+                frames, type_c="Si", type_i="Si", rmax=5.0
+            )
+            rdf.calculate()
+            rdf.plot(ax=ax, plot_kws={"color": cmap(nli / NLIMAX)})
 
     ax.set_xlabel(r"r [$\AA$]")
     ax.set_ylabel("RDF Si-Si")
@@ -61,50 +86,50 @@ def rdf_plot(nlis, path="npt/"):
     plt.show()
 
 
-def fvc_plot(nlis, path="npt/"):
+def fvc_plot(trajectories, info):
     """Plot the fractional volume change during the lithiation."""
-    x_values = np.asarray(nlis) / NSI
-    natoms_a = np.full(len(nlis), NSI)
+    x_values, volume, err_volume = [], [], []
+    for frames, thermo in zip(trajectories, info):
+        nli = frames[0]._natoms_type(frames[0]._mask_type("Li"))
 
-    volume, err_volume = [], []
-    for x, nli in zip(x_values, nlis):
-        prefix = f"Li{nli}Si{NSI}"
+        vx = [box ** 3 for box in thermo["xbox"].values]
 
-        thermo = read_md_out(path + "md." + prefix + ".out")
-
-        vx = [box**3 for box in thermo["xbox"].values]
-
+        x_values.append(nli / NSI)
         volume.append(np.mean(vx))
         err_volume.append(np.std(vx))
 
     df = pd.DataFrame(
         {
             "x": x_values,
-            "natoms_a": natoms_a,
+            "natoms_a": np.full(len(volume), NSI),
             "volume": volume,
             "err_volume": err_volume,
         }
     )
-    df = exma.electrochemistry.fractional_volume_change(df, NSI, 10.937456**3)
+    df = exma.electrochemistry.fractional_volume_change(df, NSI, 10.937456 ** 3)
 
     fig, ax = plt.subplots()
 
     ax.errorbar(df["x"], df["fvc"], yerr=df["err_fvc"], marker="o", linestyle=":")
 
     fvc_chevrier = lambda x: 0.786647 * x + 0.001547
-    ax.plot(df["x"], fvc_chevrier(df["x"]))
+    xeval = np.array([0, 3.75])
+    ax.plot(xeval, fvc_chevrier(xeval))
 
     ax.set_xlabel(r"$x$ in Li$_x$Si")
     ax.set_ylabel("Fractional volume change")
 
+    ax.set_xlim((0, 3.75))
+
     ax.grid(linestyle=":")
 
     fig.tight_layout()
-    #fig.savefig(f"res/fvc.png", dpi=600)
+    # fig.savefig(f"res/fvc.png", dpi=600)
     plt.show()
 
 
 if __name__ == "__main__":
-    nlis = np.concatenate((np.arange(1, 22, 4), np.arange(24, 88, 3)))
-    rdf_plot(nlis)
-    fvc_plot(nlis)
+    trajectories, info = _read_trajectories()
+
+    fvc_plot(trajectories, info)
+    rdf_plot(trajectories, info)
