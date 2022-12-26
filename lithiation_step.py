@@ -79,7 +79,7 @@ def lithiation_step(frame, box):
     frame.z = np.append(frame.z, largest_pos[2])
 
     # increase the volume and scale all the coordinates
-    expand_factor = np.cbrt(box**3 + 16.05) / box
+    expand_factor = np.cbrt(box ** 3 + 16.05) / box
     frame.box *= expand_factor
     frame.x *= expand_factor
     frame.y *= expand_factor

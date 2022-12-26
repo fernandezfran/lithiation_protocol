@@ -15,3 +15,5 @@ lbfgs/*.out
 sjob.sh
 nohup.out
 slurm-*
+
+res/

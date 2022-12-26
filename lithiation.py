@@ -19,6 +19,7 @@ import os
 import subprocess
 
 import exma
+
 import numpy as np
 
 from lithiation_step import lithiation_step

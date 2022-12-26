@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """Different mechanical statistical analyses of the lithiation."""
 import os
-import subprocess
 
 import exma
 
@@ -51,8 +50,10 @@ def _read_trajectories(path="npt/"):
     return trajectories, info
 
 
-def rdf_plot(trajectories, info, each=5):
+def rdf_plot(each=5, central="Si", interact="Si", save=False):
     """Plot the RDF of Si-Si for each lithium concentration."""
+    trajectories, info = _read_trajectories()
+
     fig, ax = plt.subplots()
     cmap = _colormap()
 
@@ -65,13 +66,13 @@ def rdf_plot(trajectories, info, each=5):
                 frame.box = np.full(3, box)
 
             rdf = exma.rdf.RadialDistributionFunction(
-                frames, type_c="Si", type_i="Si", rmax=5.0
+                frames, type_c=central, type_i=interact, rmax=5.0
             )
             rdf.calculate()
             rdf.plot(ax=ax, plot_kws={"color": cmap(nli / NLIMAX)})
 
     ax.set_xlabel(r"r [$\AA$]")
-    ax.set_ylabel("RDF Si-Si")
+    ax.set_ylabel(f"RDF {central}-{interact}")
 
     ax.set_xlim((1.5, 5))
 
@@ -82,12 +83,15 @@ def rdf_plot(trajectories, info, each=5):
     clb.ax.set_ylabel("Percent lithium concentration")
 
     fig.tight_layout()
-    # fig.savefig(f"res/rdf.png", dpi=600)
+    if save:
+        fig.savefig(f"res/rdf_{central}-{interact}.png", dpi=600)
     plt.show()
 
 
-def fvc_plot(trajectories, info):
+def fvc_plot(save=False):
     """Plot the fractional volume change during the lithiation."""
+    trajectories, info = _read_trajectories()
+
     x_values, volume, err_volume = [], [], []
     for frames, thermo in zip(trajectories, info):
         nli = frames[0]._natoms_type(frames[0]._mask_type("Li"))
@@ -124,12 +128,6 @@ def fvc_plot(trajectories, info):
     ax.grid(linestyle=":")
 
     fig.tight_layout()
-    # fig.savefig(f"res/fvc.png", dpi=600)
+    if save:
+        fig.savefig("res/fvc.png", dpi=600)
     plt.show()
-
-
-if __name__ == "__main__":
-    trajectories, info = _read_trajectories()
-
-    fvc_plot(trajectories, info)
-    rdf_plot(trajectories, info)
