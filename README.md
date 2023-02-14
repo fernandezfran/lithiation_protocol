@@ -28,8 +28,9 @@ pip install -r requirements.txt
 
 You also need a [DFTB+](https://github.com/dftbplus/dftbplus) executable. 
 
-The set of parameters for the Li Si interaction can be downloaded [here](TODO)
-and you must copy them to the `B-params` directory.
+The set of parameters for the Li Si interaction can be downloaded 
+[here](https://github.com/alexispaz/DFTB_LiSi/tree/main/lisi) and you must copy 
+them to the `B-params` directory.
 
 In case the minimizations and equilibrations want to be done with other 
 software and/or potential you can modify the `run.sh` file to do these two 
