@@ -22,7 +22,7 @@ of amorphous silicon.
 
 Python3.8+ and the required libraries:
 
-```bash
+```
 pip install -r requirements.txt
 ```
 
@@ -39,7 +39,7 @@ steps in another way.
 
 ## Usage
 
-```bash
+```
 $ python3 main.py --help
 usage: main.py [-h] [--restart-from RESTART_FROM] [--fvc] [--rdf [RDF]] [--central [CENTRAL]] [--interact [INTERACT]] [-s]
 
@@ -59,25 +59,25 @@ optional arguments:
 ```
 
 For example, if you want to start the lithiation from scratch:
-```bash
+```
 $ python3 main.py 
 ```
 But if you want to restart from the structure, e.g. Li17Si64, then
-```bash
+```
 $ python3 main.py --restart-from Li17Si64
 ```
 
 Once the lithiation has been run, it can be analyzed structurally, for example, 
 the fractional volumetric change 
-```bash
+```
 $ python3 main.py --fvc
 ```
 or the rdf
-```bash
+```
 $ python3 main.py --rdf
 ```
 if you want to change the default Si-Si interaction you can use the following flags
-```bash
+```
 $ python3 main.py --rdf --central Si --interact Li
 ```
 if you want to save the plots you can use the flag `-s` at the end.
