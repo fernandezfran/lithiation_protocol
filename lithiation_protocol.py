@@ -40,11 +40,21 @@ from scipy.spatial import Voronoi
 
 
 class LithiationProtocol:
-    def __init__(self, structure=None, nsteps=1, nsi=64, expansion_factor=16.05):
+    def __init__(
+        self,
+        structure=None,
+        nsteps=1,
+        nsi=64,
+        expansion_factor=16.05,
+        xfull=3.75,
+        boxsize=10.937456,
+    ):
         self.structure = structure
         self.nsteps = nsteps
         self.nsi = nsi
         self.expansion_factor = expansion_factor
+        self.xfull = xfull
+        self.boxsize = boxsize
 
     def _get_min_press_frame(self):
         box, press = [], []
@@ -69,7 +79,6 @@ class LithiationProtocol:
         u = mda.Universe("LixSi64.xyz")
         frame = u.trajectory[min_press_frame]
         frame.dimensions = np.array(3 * [box[min_press_frame]] + 3 * [90.0])
-
         # falta hacer un wrap de las posiciones acá
 
         return frame
@@ -143,13 +152,20 @@ class LithiationProtocol:
     def _lithiate_nsteps(self, frame):
         for _ in range(self.nsteps):
             dmax, frame = self._lithiation_step(frame, frame.dimensions[0])
-            self.nli += 1
+            self.nli_ += 1
 
         return frame
 
     def run(self):
-        """Run the full lithiation or restart from an structure."""
-        if self.structure is not None:
+        if self.structure is None:
+            u = mda.Universe("init/a-Si64.xyz")
+            frame = u.trajectory[-1]
+            frame.dimensions = np.array(3 * [self.boxsize] + 3 * [90.0])
+            # falta hacer un wrap de las posiciones acá
+
+            self.nli_ = 0
+
+        else:
             # get the structure and restart the lithiation
             os.system(f"cp npt/md.{self.structure}.out md.out")
             os.system(f"cp npt/{self.structure}.xyz LixSi64.xyz")
@@ -157,29 +173,16 @@ class LithiationProtocol:
             # initial number of Li atoms
             frames = exma.read_xyz(f"LixSi64.xyz")
             frame = frames[-1]
-            self.nli = frame._natoms_type(frame._mask_type("Li"))
 
-        else:
-            # initializate lithiation
-            u = mda.Universe("init/a-Si64.xyz")
-            frame = u.trajectory[-1]
-            frame.dimensions = np.array(3 * [10.937456] + 3 * [90.0])
+            self.nli_ = frame._natoms_type(frame._mask_type("Li"))
 
-            # falta hacer un wrap de las posiciones acá
-
-            # add nsteps Li atom and expand frame
-            self.nli = 0
-            frame = self._lithiate_nsteps(frame)
-            self._write_gen_format(frame)
-            subprocess.run(["bash", "run.sh"])
-
-        x = self.nli / self.nsi
-        while x < 3.75:
+        x = self.nli_ / self.nsi
+        while x < self.xfull:
             frame = self._get_min_press_frame()
 
             # save files of interest
-            os.system(f"mv md.out npt/md.Li{self.nli}Si64.out")
-            os.system(f"mv LixSi64.xyz npt/Li{self.nli}Si64.xyz")
+            os.system(f"mv md.out npt/md.Li{self.nli_}Si64.out")
+            os.system(f"mv LixSi64.xyz npt/Li{self.nli_}Si64.xyz")
 
             frame = self._lithiate_nsteps(frame)
 
@@ -189,4 +192,4 @@ class LithiationProtocol:
             # run LBFGS minimization and Berendsen NPT
             subprocess.run(["bash", "run.sh"])
 
-            x = self.nli / self.nsi
+            x = self.nli_ / self.nsi

@@ -39,6 +39,7 @@ respective directories.
 ```
 $ python3 main.py --help
 usage: main.py [-h] [--restart-from RESTART_FROM] [--nsteps NSTEPS] [--natoms NATOMS] [--expansion-factor EXPANSION_FACTOR]
+               [--x-full X_FULL] [--box-size BOX_SIZE]
 
 Lithiate an amorphous structure, by default from the beginning but can also be restarted from a given structure.
 
@@ -47,8 +48,9 @@ optional arguments:
   --restart-from RESTART_FROM
                         restart from a given structure RESTART_FROM, e.g. Li55Si64
   --nsteps NSTEPS       number of simultaneous lithium insertions, e.g. 3
-  --natoms NATOMS       number of atoms in the initial amorphous structure
+  --natoms NATOMS       number of atoms in the initial amorphous structure, e.g. 64
   --expansion-factor EXPANSION_FACTOR
                         the volume expansion of adding a lithium atom in the structure
-
+  --x-full X_FULL       the maximum x value
+  --box-size BOX_SIZE   the initial size of the box
 ```
