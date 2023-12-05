@@ -1,5 +1,0 @@
-exma==0.5.7
-matplotlib
-numpy
-pandas
-scipy

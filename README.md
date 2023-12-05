@@ -19,10 +19,10 @@ to 16 Li atoms for the a-Si64 structure.
 
 ## Requirements
 
-Python3.8+ and the required libraries:
+Python3.8+ and [MDAnalysis](https://www.mdanalysis.org/) (which also install NumPy and SciPy):
 
 ```
-pip install -r requirements.txt
+pip install -U MDAnalysis
 ```
 
 You also need a [DFTB+](https://github.com/dftbplus/dftbplus) executable and the 
