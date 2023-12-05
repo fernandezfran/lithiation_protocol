@@ -1,21 +1,20 @@
-# Lithiation of amorphous silicon
+# Lithiation protocol of Si
 
 We start with an amorphized silicon structure and follow the next protocol:
 
 1. add a Li atom at the center of the largest spherical void,
 2. increase the volume and scale the coordinates,
 3. perform a local LBFGS minimization,
-4. simulate 10ps with Berendsen NPT,
+4. simulate an NPT molecular dynamics,
 5. select the frame with minimum absolute pressure,
 6. with x defined as number of Li atoms per Si atoms if x is less than 3.75 goto point 1 else finish.
 
-To make the process faster, multiple atoms of lithium are added at a time and 
-expanding in each one of them. It was checked with DFT that a step of x=0.25 in
-Li$_x$Si does not alter the results, which would correspond to 16 atoms here.
-
 This protocol is slightly similar to the one proposed by 
 [Chevrier and Dahn](https://doi.org/10.1149/1.3111037), also for the lithiation 
-of amorphous silicon.
+of amorphous silicon. To make the process faster, multiple atoms of lithium 
+are added at a time and expanding in each one of them. The authors checked 
+with DFT that a step of x=0.25 in Li$_x$Si does not alter the results, 
+which would correspond to 16 atoms here.
 
 
 ## Requirements
@@ -28,7 +27,7 @@ pip install -r requirements.txt
 
 You also need a [DFTB+](https://github.com/dftbplus/dftbplus) executable. 
 
-The set of parameters for the Li Si interaction can be downloaded 
+The set of parameters for the LiSi interaction can be downloaded 
 [here](https://github.com/alexispaz/DFTB_LiSi/tree/main/lisi) and you must copy 
 them to the `B-params` directory.
 
@@ -41,21 +40,14 @@ steps in another way.
 
 ```
 $ python3 main.py --help
-usage: main.py [-h] [--restart-from RESTART_FROM] [--fvc] [--rdf [RDF]] [--central [CENTRAL]] [--interact [INTERACT]] [-s]
+usage: main.py [-h] [--restart-from RESTART_FROM]
 
-Lithiate an amorphous structure, by default from the beginning but can also be restarted from a given structure. You have also different
-options to analyze the lithiation once it was performed.
+Lithiate an amorphous structure, by default from the beginning but can also be restarted from a given structure. 
 
 optional arguments:
   -h, --help            show this help message and exit
   --restart-from RESTART_FROM
                         restart from a given structure RESTART_FROM, e.g. Li55Si64
-  --fvc                 fractional volume change calculation
-  --rdf [RDF]           Si-Si rdf specifying how many structures to skip for the plot, by default 5
-  --central [CENTRAL]   central atom type for rdf calculation, by default Si
-  --interact [INTERACT]
-                        interact atom type for rdf calculation, by default Si
-  -s, --save            true to save the png figures if created
 ```
 
 For example, if you want to start the lithiation from scratch:
@@ -66,18 +58,3 @@ But if you want to restart from the structure, e.g. Li17Si64, then
 ```
 $ python3 main.py --restart-from Li17Si64
 ```
-
-Once the lithiation has been run, it can be analyzed structurally, for example, 
-the fractional volumetric change 
-```
-$ python3 main.py --fvc
-```
-or the rdf
-```
-$ python3 main.py --rdf
-```
-if you want to change the default Si-Si interaction you can use the following flags
-```
-$ python3 main.py --rdf --central Si --interact Li
-```
-if you want to save the plots you can use the flag `-s` at the end.
