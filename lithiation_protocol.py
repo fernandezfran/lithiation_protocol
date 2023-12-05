@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
 """Full lithiation of amorphous silicon using DFTB+.
 
-We start with an amorphized silicon structure and follow the next protocol:
+We start with an amorphous silicon structure and follow the next protocol:
 
 1. add a Li atom at the center of the largest spherical void,
     to find the largest spherical void, the centers of the Delaunay
@@ -29,10 +30,12 @@ To make the process faster, till 16 atoms of lithium can be added at a time
 and expanding in each one of them, this was checked with DFT which does not
 alter the results.
 """
+
 import os
 import subprocess
 
 import MDAnalysis as mda
+from MDAnalysis.transformations import wrap
 
 import numpy as np
 
@@ -77,11 +80,10 @@ class LithiationProtocol:
         min_press_frame = np.argmin(np.abs(press))
 
         u = mda.Universe("LixSi64.xyz")
-        frame = u.trajectory[min_press_frame]
-        frame.dimensions = np.array(3 * [box[min_press_frame]] + 3 * [90.0])
-        # falta hacer un wrap de las posiciones acá
+        u.trajectory.dimensions = np.array(3 * [box[min_press_frame]] + 3 * [90.0])
+        u.trajectory.add_transformations(wrap(u.atoms))
 
-        return frame
+        return u.trajectory[min_press_frame]
 
     def _write_gen_format(self, frame):
         with open("LixSi64.gen", "w") as gen:
@@ -159,11 +161,14 @@ class LithiationProtocol:
     def run(self):
         if self.structure is None:
             u = mda.Universe("init/a-Si64.xyz")
+            u.trajectory.dimensions = np.array(3 * [self.boxsize] + 3 * [90.0])
+            u.trajectory.add_transformations(wrap(u.atoms))
             frame = u.trajectory[-1]
-            frame.dimensions = np.array(3 * [self.boxsize] + 3 * [90.0])
-            # falta hacer un wrap de las posiciones acá
 
             self.nli_ = 0
+            frame = self._lithiate_nsteps(frame)
+            self._write_gen_format(frame)
+            subprocess.run(["bash", "run.sh"])
 
         else:
             # get the structure and restart the lithiation
@@ -171,10 +176,8 @@ class LithiationProtocol:
             os.system(f"cp npt/{self.structure}.xyz LixSi64.xyz")
 
             # initial number of Li atoms
-            frames = exma.read_xyz(f"LixSi64.xyz")
-            frame = frames[-1]
-
-            self.nli_ = frame._natoms_type(frame._mask_type("Li"))
+            u = mda.Universe("LixSi64.xyz")
+            self.nli_ = np.count_nonzero(u.atoms.types == "LI")
 
         x = self.nli_ / self.nsi
         while x < self.xfull:
