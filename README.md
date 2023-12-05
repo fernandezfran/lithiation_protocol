@@ -28,7 +28,9 @@ pip install -r requirements.txt
 You also need a [DFTB+](https://github.com/dftbplus/dftbplus) executable and the 
 set of parameters for the LiSi interaction in the `params` directory (these 
 parameters can be downloaded 
-[here](https://github.com/alexispaz/DFTB_LiSi/tree/main/lisi))
+[here](https://github.com/alexispaz/DFTB_LiSi/tree/main/lisi)). Also, hsd scripts
+for the LBFGS minimization and the NPT simulation must be provided in the 
+respective directories.
 
 
 ## Usage
