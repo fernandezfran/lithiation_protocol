@@ -113,7 +113,7 @@ class LithiationProtocol:
         vertices = [v - vcenter for v, m in zip(voronoi.vertices, mask) if m.all()]
 
         # get the largest spherical void
-        dmax = 1e-6
+        dmins = []
         for vpoint in vertices:
             # get the distance (considering minimum image) to the closest atom
             frame_point = exma.core.AtomicSystem(
@@ -124,14 +124,13 @@ class LithiationProtocol:
                 y=np.array([vpoint[1]]),
                 z=np.array([vpoint[2]]),
             )
-            dmin = np.min(exma.distances.pbc_distances(frame_point, frame))
-
-            # get the largest min distance and the positions in the voronoi grid
-            if dmin > dmax:
-                dmax = dmin
-                largest_pos = vpoint
+            dmins.append(np.min(exma.distances.pbc_distances(frame_point, frame)))
 
             del frame_point
+
+        idx = np.argmax(dmins)
+        dmax = dmins[idx]
+        largest_pos = vertices[idx]
 
         # add a Li atom to the frame
         frame.natoms += 1
@@ -171,11 +170,9 @@ class LithiationProtocol:
             subprocess.run(["bash", "run.sh"])
 
         else:
-            # get the structure and restart the lithiation
             os.system(f"cp npt/md.{self.structure}.out md.out")
             os.system(f"cp npt/{self.structure}.xyz LixSi64.xyz")
 
-            # initial number of Li atoms
             u = mda.Universe("LixSi64.xyz")
             self.nli_ = np.count_nonzero(u.atoms.types == "LI")
 
@@ -183,16 +180,13 @@ class LithiationProtocol:
         while x < self.xfull:
             frame = self._get_min_press_frame()
 
-            # save files of interest
             os.system(f"mv md.out npt/md.Li{self.nli_}Si64.out")
             os.system(f"mv LixSi64.xyz npt/Li{self.nli_}Si64.xyz")
 
             frame = self._lithiate_nsteps(frame)
 
-            # write genFormat file for dftb+
             self._write_gen_format(frame)
 
-            # run LBFGS minimization and Berendsen NPT
             subprocess.run(["bash", "run.sh"])
 
             x = self.nli_ / self.nsi
