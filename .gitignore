@@ -6,13 +6,6 @@ LixSi64.gen
 LixSi64.xyz
 md.out
 
-npt/*.xyz
-npt/*.out
-lbfgs/*.xyz
-lbfgs/*.out
-
 sjob.sh
 nohup.out
 slurm-*
-
-res/

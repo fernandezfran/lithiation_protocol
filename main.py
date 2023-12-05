@@ -5,31 +5,30 @@
 
 import argparse
 
-import lithiation
+import lithiation_protocol
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Lithiate an amorphous structure, "
-        "by default from the beginning but can also be restarted from a given "
-        "structure. You have also different options to analyze the lithiation "
-        " once it was performed."
+        description="Lithiate an amorphous structure, by default from the "
+        "beginning but can also be restarted from a given structure."
     )
 
     parser.add_argument(
         "--restart-from",
         help="restart from a given structure RESTART_FROM, e.g. Li55Si64",
+        default=None,
+    )
+
+    parser.add_argument(
+        "--nsteps",
+        help="number of simultaneous lithium insertions, e.g. 3",
+        default=1,
     )
 
     args = parser.parse_args()
 
-    full = True
-    for v in args.__dict__.values():
-        if v:
-            full = False
-
-    if full or args.restart_from:
-        lithiation.Lithiation(structure=args.restart_from, nsteps=1).run()
+    lithiation_protocol.LithiationProtocol(**args.__dict__).run()
 
 
 if __name__ == "__main__":

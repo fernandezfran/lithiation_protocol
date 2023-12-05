@@ -7,26 +7,27 @@ We start with an amorphized silicon structure and follow the next protocol:
 1. add a Li atom at the center of the largest spherical void,
 2. increase the volume and scale the coordinates,
 3. perform a local LBFGS minimization,
-4. simulate 10ps with Berendsen NPT,
+4. simulate an NPT molecular dynamics,
 5. select the frame with minimum absolute pressure,
 6. with x defined as number of Li atoms per Si atoms if x < 3.75 goto point 1
 else finish.
 
-To make the process faster, 4 atoms of lithium are added at a time and expanding
-in each one of them, this was checked with DFT which does not alter the results.
+To make the process faster, till 16 atoms of lithium can be added at a time
+and expanding in each one of them, this was checked with DFT which does not
+alter the results.
 """
 import os
 import subprocess
 
-import exma
+import MDAnalysis as mda
 
 import numpy as np
 
 from lithiation_step import lithiation_step
-from io_dftb_plus import read_md_out, write_gen_format
+from io_dftb_plus import write_gen_format
 
 
-class Lithiation:
+class LithiationProtocol:
     """Lithiation protocol.
 
     Parameters
@@ -34,24 +35,41 @@ class Lithiation:
     structure : str, default=None
         name of the structure to restart from
 
-    nsteps : int, default=3
+    nsteps : int, default=1
         number of simultaneous lithium insertions
     """
 
-    def __init__(self, structure=None, nsteps=4):
+    def __init__(self, structure=None, nsteps=1, nsi=64):
         self.structure = structure
         self.nsteps = nsteps
-        self.nsi = 64
+        self.nsi = nsi
 
     def _get_min_press_frame(self):
-        df = read_md_out()
-        min_press_frame = np.argmin(np.abs(df["press"].values))
+        box, press = [], []
 
-        frames = exma.read_xyz("LixSi64.xyz")
-        frame = frames[min_press_frame]
-        frame.box = np.array(
-            [df[kbox][min_press_frame] for kbox in ("xbox", "ybox", "zbox")]
-        )
+        with open("md.out", "r") as md_info:
+            line = md_info.readline()
+
+            while line not in (None, "\r", "\n", ""):
+                line = line.strip()
+                if line.startswith("Pressure"):
+                    press.append(line.split()[3])
+                elif line.startswith("Lattice vectors"):
+                    line = md_info.readline()
+                    box.append(line.split()[0])
+                line = md_info.readline()
+
+            box = np.array(box, dtype=float)
+            press = np.array(press, dtype=float)
+
+        min_press_frame = np.argmin(np.abs(press))
+
+        box = np.array(3 * [box[min_press_frame]] + 3 * 90.0)
+
+        u = mda.Universe("LixSi64.xyz")
+        frame = u.trajectory[min_press_frame]
+        # acá quedé
+        frame.dimensions = box
 
         return frame._wrap()
 
