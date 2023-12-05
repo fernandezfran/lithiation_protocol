@@ -5,10 +5,23 @@
 We start with an amorphized silicon structure and follow the next protocol:
 
 1. add a Li atom at the center of the largest spherical void,
+    to find the largest spherical void, the centers of the Delaunay
+    triangulation are found, which correspond to the vertices of a Voronoi
+    diagram, the distance from these points to all the atoms is calculated,
+    the smallest one is selected and then the largest of these corresponds to
+    the empty sphere with the largest radius.
+
 2. increase the volume and scale the coordinates,
+    this is done to follow the experimental expansion of the system.
+
 3. perform a local LBFGS minimization,
+    with DFTB+ software.
+
 4. simulate an NPT molecular dynamics,
+    with DFTB+ software.
+
 5. select the frame with minimum absolute pressure,
+
 6. with x defined as number of Li atoms per Si atoms if x < 3.75 goto point 1
 else finish.
 
@@ -26,95 +39,12 @@ import numpy as np
 from scipy.spatial import Voronoi
 
 
-def lithiation_step(frame, box):
-    """A single step of the lithiation protocol.
-
-    Add a Li atom at the center of the largest spherical void in a structure
-    and expand the volume.
-
-    To find the largest spherical void, the centers of the Delaunay
-    triangulation are found, which correspond to the vertices of a Voronoi
-    diagram, the distance from these points to all the atoms is calculated,
-    the smallest one is selected and then the largest of these corresponds to
-    the empty sphere with the largest radius.
-
-    Parameters
-    ----------
-    frame : exma.core.AtomicSystem
-        frame of the structure to lithiate and expand
-
-    box : float
-        the box size
-
-    Returns
-    -------
-    tuple
-        with a float corresponding with the radius of the sphere and a frame
-        (exma.core.AtomicSystem) with the new structure
-    """
-    # find the voronoi vertices inside the box with pbc
-    ## it is necesary to replicate the frame to consider pbc
-    replicated_frame = exma.io.positions.replicate(frame, [3, 3, 3])
-    x = replicated_frame.x
-    y = replicated_frame.y
-    z = replicated_frame.z
-
-    ## voronoi calculation with a point in each atom position
-    voronoi = Voronoi(np.array((x, y, z)).T)
-
-    ## get the vertices of the voronoi diagram, which corresponds to the centers
-    ## of the Delaunay triangulation spheres, in the central box (the one that
-    ## is take in into account the pbc) and pass them from the interval
-    ## [box, 2*box) to [0, box) in each direction
-    vcenter = np.full(3, box)
-    mask = (voronoi.vertices >= box) & (voronoi.vertices < 2 * box)
-    vertices = [v - vcenter for v, m in zip(voronoi.vertices, mask) if m.all()]
-
-    # get the largest spherical void
-    dmax = 1e-6
-    for vpoint in vertices:
-        # get the distance (considering minimum image) to the closest atom
-        frame_point = exma.core.AtomicSystem(
-            natoms=1,
-            box=np.full(3, box),
-            types=np.array(["Li"]),
-            x=np.array([vpoint[0]]),
-            y=np.array([vpoint[1]]),
-            z=np.array([vpoint[2]]),
-        )
-        dmin = np.min(exma.distances.pbc_distances(frame_point, frame))
-
-        # get the largest min distance and the positions in the grid
-        if dmin > dmax:
-            dmax = dmin
-            largest_pos = vpoint
-
-        del frame_point
-
-    # add a Li atom to the frame
-    frame.natoms += 1
-    frame.types = np.append(frame.types, "Li")
-    frame.x = np.append(frame.x, largest_pos[0])
-    frame.y = np.append(frame.y, largest_pos[1])
-    frame.z = np.append(frame.z, largest_pos[2])
-
-    # increase the volume and scale all the coordinates
-    expand_factor = np.cbrt(box**3 + 16.05) / box
-    frame.box *= expand_factor
-    frame.x *= expand_factor
-    frame.y *= expand_factor
-    frame.z *= expand_factor
-
-    del replicated_frame, x, y, z, voronoi
-
-    return dmax, frame
-
-
 class LithiationProtocol:
-    def __init__(self, structure=None, nsteps=1, nsi=64):
+    def __init__(self, structure=None, nsteps=1, nsi=64, expansion_factor=16.05):
         self.structure = structure
         self.nsteps = nsteps
         self.nsi = nsi
+        self.expansion_factor = expansion_factor
 
     def _get_min_press_frame(self):
         box, press = [], []
@@ -157,9 +87,62 @@ class LithiationProtocol:
             gen.write(f"0.0 {frame.dimensions[1]} 0.0\n")
             gen.write(f"0.0 0.0 {frame.dimensions[2]}\n")
 
+    def _lithiation_step(self, frame, box):
+        # scipy does not allow pbc so the system is replicated in all directions
+        replicated_frame = exma.io.positions.replicate(frame, [3, 3, 3])
+        x = replicated_frame.x
+        y = replicated_frame.y
+        z = replicated_frame.z
+
+        voronoi = Voronoi(np.array((x, y, z)).T)
+
+        # get the vertices of the voronoi diagram in the central box
+        vcenter = np.full(3, box)
+        mask = (voronoi.vertices >= box) & (voronoi.vertices < 2 * box)
+        vertices = [v - vcenter for v, m in zip(voronoi.vertices, mask) if m.all()]
+
+        # get the largest spherical void
+        dmax = 1e-6
+        for vpoint in vertices:
+            # get the distance (considering minimum image) to the closest atom
+            frame_point = exma.core.AtomicSystem(
+                natoms=1,
+                box=np.full(3, box),
+                types=np.array(["Li"]),
+                x=np.array([vpoint[0]]),
+                y=np.array([vpoint[1]]),
+                z=np.array([vpoint[2]]),
+            )
+            dmin = np.min(exma.distances.pbc_distances(frame_point, frame))
+
+            # get the largest min distance and the positions in the voronoi grid
+            if dmin > dmax:
+                dmax = dmin
+                largest_pos = vpoint
+
+            del frame_point
+
+        # add a Li atom to the frame
+        frame.natoms += 1
+        frame.types = np.append(frame.types, "Li")
+        frame.x = np.append(frame.x, largest_pos[0])
+        frame.y = np.append(frame.y, largest_pos[1])
+        frame.z = np.append(frame.z, largest_pos[2])
+
+        # increase the volume and scale all the coordinates
+        expand_factor = np.cbrt(box ** 3 + self.expansion_factor) / box
+        frame.box *= expand_factor
+        frame.x *= expand_factor
+        frame.y *= expand_factor
+        frame.z *= expand_factor
+
+        del replicated_frame, x, y, z, voronoi
+
+        return dmax, frame
+
     def _lithiate_nsteps(self, frame):
         for _ in range(self.nsteps):
-            dmax, frame = lithiation_step(frame, frame.dimensions[0])
+            dmax, frame = self._lithiation_step(frame, frame.dimensions[0])
             self.nli += 1
 
         return frame

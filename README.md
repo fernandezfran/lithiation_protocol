@@ -13,13 +13,14 @@ This protocol is slightly similar to the one proposed by
 [Chevrier and Dahn](https://doi.org/10.1149/1.3111037), also for the lithiation 
 of a-Si. To make the process faster, multiple atoms of lithium can be added at 
 a time and expanding in each one of them. The authors checked with DFT that a 
-step of x=0.25 in Li$_x$Si does not alter the results, which would correspond 
-to 16 Li atoms for the a-Si64 structure.
+step of x=0.25 in Li<sub>x</sub>Si does not alter the results, which would
+correspond to 16 Li atoms for the a-Si64 structure.
 
 
 ## Requirements
 
-Python3.8+ and [MDAnalysis](https://www.mdanalysis.org/) (which also install NumPy and SciPy):
+Python3.8+ and [MDAnalysis](https://www.mdanalysis.org/) (which also install 
+NumPy and SciPy):
 
 ```
 pip install -U MDAnalysis
@@ -37,7 +38,7 @@ respective directories.
 
 ```
 $ python3 main.py --help
-usage: main.py [-h] [--restart-from RESTART_FROM] [--nsteps NSTEPS]
+usage: main.py [-h] [--restart-from RESTART_FROM] [--nsteps NSTEPS] [--natoms NATOMS] [--expansion-factor EXPANSION_FACTOR]
 
 Lithiate an amorphous structure, by default from the beginning but can also be restarted from a given structure.
 
@@ -46,4 +47,8 @@ optional arguments:
   --restart-from RESTART_FROM
                         restart from a given structure RESTART_FROM, e.g. Li55Si64
   --nsteps NSTEPS       number of simultaneous lithium insertions, e.g. 3
+  --natoms NATOMS       number of atoms in the initial amorphous structure
+  --expansion-factor EXPANSION_FACTOR
+                        the volume expansion of adding a lithium atom in the structure
+
 ```
