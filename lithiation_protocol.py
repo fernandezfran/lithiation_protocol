@@ -24,7 +24,6 @@ import MDAnalysis as mda
 import numpy as np
 
 from lithiation_step import lithiation_step
-from io_dftb_plus import write_gen_format
 
 
 class LithiationProtocol:
@@ -64,19 +63,32 @@ class LithiationProtocol:
 
         min_press_frame = np.argmin(np.abs(press))
 
-        box = np.array(3 * [box[min_press_frame]] + 3 * 90.0)
-
         u = mda.Universe("LixSi64.xyz")
         frame = u.trajectory[min_press_frame]
-        # acá quedé
-        frame.dimensions = box
+        frame.dimensions = np.array(3 * [box[min_press_frame]] + 3 * [90.0])
 
-        return frame._wrap()
+        # falta hacer un wrap de las posiciones acá
+
+        return frame
+
+    def _write_gen_format(self, frame):
+        with open("LixSi64.gen", "w") as gen:
+            gen.write(f" {frame.n_atoms} S\n")
+            gen.write(" Si Li\n")
+            for i in range(frame.n_atoms):
+                atom_type = 1 if i < 64 else 2
+                x, y, z = frame.positions[i]
+                gen.write(f"{i + 1} {atom_type} {x:.6e} {y:.6e} {z:.6e}\n")
+            gen.write("0.0 0.0 0.0\n")
+            gen.write(f"{frame.dimensions[0]} 0.0 0.0\n")
+            gen.write(f"0.0 {frame.dimensions[1]} 0.0\n")
+            gen.write(f"0.0 0.0 {frame.dimensions[2]}\n")
+
 
     def _lithiate_nsteps(self, frame):
         # add nsteps Li atoms and expand frame
         for _ in range(self.nsteps):
-            dmax, frame = lithiation_step(frame, frame.box[0])
+            dmax, frame = lithiation_step(frame, frame.dimensions[0])
             self.nli += 1
 
         return frame
@@ -95,15 +107,16 @@ class LithiationProtocol:
 
         else:
             # initializate lithiation
-            frames = exma.read_xyz("a-Si64.xyz")
-            frame = frames[-1]
-            frame.box = np.full(3, 10.937456)
-            frame._wrap()
+            u = mda.Universe("init/a-Si64.xyz")
+            frame = u.trajectory[-1]
+            frame.dimensions = np.array(3 * [10.937456] + 3 * [90.0])
 
-            # add a Li atom and expand frame
-            self.nli = 1
-            dmax, frame = lithiation_step(frame, 10.937456)
-            write_gen_format(frame, "LixSi64.gen")
+            # falta hacer un wrap de las posiciones acá
+
+            # add nsteps Li atom and expand frame
+            self.nli = 0
+            frame = self._lithiate_nsteps(frame)
+            self._write_gen_format(frame)
             subprocess.run(["bash", "run.sh"])
 
         x = self.nli / self.nsi
@@ -117,7 +130,7 @@ class LithiationProtocol:
             frame = self._lithiate_nsteps(frame)
 
             # write genFormat file for dftb+
-            write_gen_format(frame, "LixSi64.gen")
+            self._write_gen_format(frame)
 
             # run LBFGS minimization and Berendsen NPT
             subprocess.run(["bash", "run.sh"])
