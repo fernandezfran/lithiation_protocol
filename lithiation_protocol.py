@@ -1,36 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""Full lithiation of amorphous silicon using DFTB+.
-
-We start with an amorphous silicon structure and follow the next protocol:
-
-1. add a Li atom at the center of the largest spherical void,
-    to find the largest spherical void, the centers of the Delaunay
-    triangulation are found, which correspond to the vertices of a Voronoi
-    diagram, the distance from these points to all the atoms is calculated,
-    the smallest one is selected and then the largest of these corresponds to
-    the empty sphere with the largest radius.
-
-2. increase the volume and scale the coordinates,
-    this is done to follow the experimental expansion of the system.
-
-3. perform a local LBFGS minimization,
-    with DFTB+ software.
-
-4. simulate an NPT molecular dynamics,
-    with DFTB+ software.
-
-5. select the frame with minimum absolute pressure,
-
-6. with x defined as number of Li atoms per Si atoms if x < 3.75 goto point 1
-else finish.
-
-To make the process faster, till 16 atoms of lithium can be added at a time
-and expanding in each one of them, this was checked with DFT which does not
-alter the results.
-"""
-
 import os
 import subprocess
 
