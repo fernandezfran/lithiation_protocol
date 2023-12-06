@@ -18,20 +18,19 @@ from scipy.spatial import Voronoi
 class LithiationProtocol:
     def __init__(
         self,
-        structure=None,
+        restart_from=None,
         nsteps=1,
         nsi=64,
         expansion_factor=16.05,
         xfull=3.75,
-        boxsize=10.937456,
+        box_size=10.937456,
     ):
-        print(structure, nsteps)
-        self.structure = structure
+        self.restart_from = restart_from
         self.nsteps = nsteps
         self.nsi = nsi
         self.expansion_factor = expansion_factor
         self.xfull = xfull
-        self.boxsize = boxsize
+        self.box_size = box_size
 
     def _get_min_press_frame(self):
         box, press = [], []
@@ -102,9 +101,9 @@ class LithiationProtocol:
         return frame
 
     def run(self):
-        if self.structure is None:
+        if self.restart_from is None:
             u = mda.Universe("init/a-Si64.xyz")
-            u.trajectory.dimensions = np.array(3 * [self.boxsize] + 3 * [90.0])
+            u.trajectory.dimensions = np.array(3 * [self.box_size] + 3 * [90.0])
             u.trajectory.add_transformations(wrap(u.atoms))
             frame = u.trajectory[-1]
 
@@ -114,8 +113,8 @@ class LithiationProtocol:
             subprocess.run(["bash", "run.sh"])
 
         else:
-            os.system(f"cp npt/md.{self.structure}.out md.out")
-            os.system(f"cp npt/{self.structure}.xyz LixSi64.xyz")
+            os.system(f"cp npt/md.{self.restart_from}.out md.out")
+            os.system(f"cp npt/{self.restart_from}.xyz LixSi64.xyz")
 
             u = mda.Universe("LixSi64.xyz")
             self.nli_ = np.count_nonzero(u.atoms.types == "LI")

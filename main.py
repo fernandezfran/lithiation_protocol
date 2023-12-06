@@ -19,15 +19,15 @@ def main():
             "restart-from",
             "nsteps",
             "expansion-factor",
-            "natoms",
-            "x-full",
+            "nsi",
+            "xfull",
             "box-size",
         ],
         [
             "restart from a given structure RESTART_FROM, e.g. Li55Si64",
             "number of simultaneous lithium insertions, e.g. 3",
-            "number of atoms in the initial amorphous structure, e.g. 64",
             "the volume expansion of adding a lithium atom in the structure",
+            "number of atoms of Si in the initial amorphous structure, e.g. 64",
             "the maximum x value",
             "the initial size of the box",
         ],
@@ -38,7 +38,8 @@ def main():
 
     args = parser.parse_args()
 
-    lp = lithiation_protocol.LithiationProtocol(args.__dict__.values())
+    lp = lithiation_protocol.LithiationProtocol(**vars(args))
+    lp.run()
 
 
 if __name__ == "__main__":
