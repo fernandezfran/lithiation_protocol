@@ -25,6 +25,7 @@ class LithiationProtocol:
         xfull=3.75,
         boxsize=10.937456,
     ):
+        print(structure, nsteps)
         self.structure = structure
         self.nsteps = nsteps
         self.nsi = nsi

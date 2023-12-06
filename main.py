@@ -14,12 +14,12 @@ def main():
         "beginning but can also be restarted from a given structure."
     )
 
-    for flag, description, default in zip(
+    for flag, description, default, dtype in zip(
         [
             "restart-from",
             "nsteps",
-            "natoms",
             "expansion-factor",
+            "natoms",
             "x-full",
             "box-size",
         ],
@@ -32,12 +32,13 @@ def main():
             "the initial size of the box",
         ],
         [None, 1, 16.05, 64, 3.75, 10.937456],
+        [str, int, float, int, float, float],
     ):
-        parser.add_argument(f"--{flag}", help=description, default=default)
+        parser.add_argument(f"--{flag}", help=description, default=default, type=dtype)
 
     args = parser.parse_args()
 
-    lithiation_protocol.LithiationProtocol(**args.__dict__).run()
+    lp = lithiation_protocol.LithiationProtocol(args.__dict__.values())
 
 
 if __name__ == "__main__":
