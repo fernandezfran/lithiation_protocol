@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import itertools as it
 import os
 import subprocess
 
 import MDAnalysis as mda
+from MDAnalysis.analysis.distances import distance_array
+from MDAnalysis.coordinates.timestep import Timestep
 from MDAnalysis.transformations import wrap
 
 import numpy as np
@@ -57,9 +60,10 @@ class LithiationProtocol:
 
     def _write_gen_format(self, frame):
         with open("LixSi64.gen", "w") as gen:
-            gen.write(f" {frame.n_atoms} S\n")
+            natoms = self.nsi + self.nli_
+            gen.write(f" {natoms} S\n")
             gen.write(" Si Li\n")
-            for i in range(frame.n_atoms):
+            for i in range(natoms):
                 atom_type = 1 if i < 64 else 2
                 x, y, z = frame.positions[i]
                 gen.write(f"{i + 1} {atom_type} {x:.6e} {y:.6e} {z:.6e}\n")
@@ -68,62 +72,34 @@ class LithiationProtocol:
             gen.write(f"0.0 {frame.dimensions[1]} 0.0\n")
             gen.write(f"0.0 0.0 {frame.dimensions[2]}\n")
 
-    def _lithiation_step(self, frame, box):
-        # scipy does not allow pbc so the system is replicated in all directions
-        replicated_frame = exma.io.positions.replicate(frame, [3, 3, 3])
-        x = replicated_frame.x
-        y = replicated_frame.y
-        z = replicated_frame.z
+    def _lithiation_step(self, frame):
+        box = frame.dimensions[:3]
+        images = box * list(it.product((-1, 0, 1), repeat=3))
+        positions = np.concatenate([frame.positions + image for image in images])
 
-        voronoi = Voronoi(np.array((x, y, z)).T)
+        voronoi = Voronoi(positions)
 
-        # get the vertices of the voronoi diagram in the central box
-        vcenter = np.full(3, box)
-        mask = (voronoi.vertices >= box) & (voronoi.vertices < 2 * box)
-        vertices = [v - vcenter for v, m in zip(voronoi.vertices, mask) if m.all()]
+        mask = (voronoi.vertices >= 0.0) & (voronoi.vertices < box)
+        vertices = [v for v, m in zip(voronoi.vertices, mask) if m.all()]
 
-        # get the largest spherical void
-        dmins = []
-        for vpoint in vertices:
-            # get the distance (considering minimum image) to the closest atom
-            frame_point = exma.core.AtomicSystem(
-                natoms=1,
-                box=np.full(3, box),
-                types=np.array(["Li"]),
-                x=np.array([vpoint[0]]),
-                y=np.array([vpoint[1]]),
-                z=np.array([vpoint[2]]),
-            )
-            dmins.append(np.min(exma.distances.pbc_distances(frame_point, frame)))
-
-            del frame_point
+        distances = distance_array(positions, vertices, box=box, backend="OpenMP")
+        dmins = [np.min(dist[dist > 0] for dist in distances)]
 
         idx = np.argmax(dmins)
-        dmax = dmins[idx]
-        largest_pos = vertices[idx]
+        newli_pos = [vertices[idx]]
 
-        # add a Li atom to the frame
-        frame.natoms += 1
-        frame.types = np.append(frame.types, "Li")
-        frame.x = np.append(frame.x, largest_pos[0])
-        frame.y = np.append(frame.y, largest_pos[1])
-        frame.z = np.append(frame.z, largest_pos[2])
+        sf = np.cbrt(box**3 + self.expansion_factor) / box
 
-        # increase the volume and scale all the coordinates
-        expand_factor = np.cbrt(box ** 3 + self.expansion_factor) / box
-        frame.box *= expand_factor
-        frame.x *= expand_factor
-        frame.y *= expand_factor
-        frame.z *= expand_factor
+        ts = Timestep(self.nsi + self.nli_)
+        ts.dimensions = np.concatenate((sf * box, np.full(3, 90)))
+        ts.positions = sf * np.concatenate((frame.positions, newli_pos))
 
-        del replicated_frame, x, y, z, voronoi
-
-        return dmax, frame
+        return ts
 
     def _lithiate_nsteps(self, frame):
         for _ in range(self.nsteps):
-            dmax, frame = self._lithiation_step(frame, frame.dimensions[0])
             self.nli_ += 1
+            frame = self._lithiation_step(frame)
 
         return frame
 
