@@ -60,10 +60,9 @@ class LithiationProtocol:
 
     def _write_gen_format(self, frame):
         with open("LixSi64.gen", "w") as gen:
-            natoms = self.nsi + self.nli_
-            gen.write(f" {natoms} S\n")
+            gen.write(f" {frame.n_atoms} S\n")
             gen.write(" Si Li\n")
-            for i in range(natoms):
+            for i in range(frame.n_atoms):
                 atom_type = 1 if i < 64 else 2
                 x, y, z = frame.positions[i]
                 gen.write(f"{i + 1} {atom_type} {x:.6e} {y:.6e} {z:.6e}\n")
@@ -85,14 +84,12 @@ class LithiationProtocol:
         distances = distance_array(positions, vertices, box=box, backend="OpenMP")
         dmins = [np.min(dist[dist > 0] for dist in distances)]
 
-        idx = np.argmax(dmins)
-        newli_pos = [vertices[idx]]
-
         sf = np.cbrt(box**3 + self.expansion_factor) / box
 
         ts = Timestep(self.nsi + self.nli_)
         ts.dimensions = np.concatenate((sf * box, np.full(3, 90)))
-        ts.positions = sf * np.concatenate((frame.positions, newli_pos))
+        new_li = [vertices[np.argmax(dmins)]]
+        ts.positions = sf * np.concatenate((frame.positions, new_li))
 
         return ts
 
