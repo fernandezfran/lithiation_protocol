@@ -81,10 +81,12 @@ class LithiationProtocol:
         mask = (voronoi.vertices >= 0.0) & (voronoi.vertices < box)
         vertices = [v for v, m in zip(voronoi.vertices, mask) if m.all()]
 
-        distances = distance_array(positions, vertices, box=box, backend="OpenMP")
+        distances = distance_array(
+            positions, vertices, box=frame.dimensions, backend="OpenMP"
+        )
         dmins = [np.min(dist[dist > 0] for dist in distances)]
 
-        sf = np.cbrt(box**3 + self.expansion_factor) / box
+        sf = np.cbrt(box ** 3 + self.expansion_factor) / box
 
         ts = Timestep(self.nsi + self.nli_)
         ts.dimensions = np.concatenate((sf * box, np.full(3, 90)))
