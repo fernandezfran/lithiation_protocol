@@ -54,10 +54,11 @@ respective directories.
 
 ```
 $ python3 main.py --help
-usage: main.py [-h] [--restart-from RESTART_FROM] [--nsteps NSTEPS] [--expansion-factor EXPANSION_FACTOR] [--nsi NSI] [--xfull XFULL]
+usage: main.py [-h] [--restart-from RESTART_FROM] [--nsteps NSTEPS]
+               [--expansion-factor EXPANSION_FACTOR] [--nsi NSI] [--xfull XFULL]
                [--box-size BOX_SIZE]
 
-Lithiate an amorphous structure, by default from the beginning but can also be restarted from a given structure.
+Lithiation protocol for an amorphous Si structure
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -66,7 +67,8 @@ optional arguments:
   --nsteps NSTEPS       number of simultaneous lithium insertions, e.g. 3
   --expansion-factor EXPANSION_FACTOR
                         the volume expansion of adding a lithium atom in the structure
-  --nsi NSI             number of atoms of Si in the initial amorphous structure, e.g. 64
+  --nsi NSI             number of atoms of Si in the initial amorphous structure, e.g.
+                        64
   --xfull XFULL         the maximum x value
   --box-size BOX_SIZE   the initial size of the box
 ```

@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""Lithiation protocol of Si."""
-
 import argparse
 
 import lithiation_protocol
@@ -10,8 +8,7 @@ import lithiation_protocol
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Lithiate an amorphous structure, by default from the "
-        "beginning but can also be restarted from a given structure."
+        description="Lithiation protocol for an amorphous Si structure"
     )
 
     for flag, description, default, dtype in zip(
