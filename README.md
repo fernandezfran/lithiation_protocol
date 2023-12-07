@@ -32,6 +32,9 @@ a time and expanding the volume and the coordinates in each one of them. The
 authors checked with DFT that a step of x=0.25 in Li<sub>x</sub>Si does not alter 
 the results, which corresponds with 16 Li atoms for the a-Si64 initial structure.
 
+Structures obtained with this code were published in this [article](https://doi.org/10.1103/PhysRevB.108.144201)
+and are available in this [public repo](https://github.com/fernandezfran/DFTB_LiSi_amorphous).
+
 
 ## Requirements
 
