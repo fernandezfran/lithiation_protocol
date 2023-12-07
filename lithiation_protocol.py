@@ -82,9 +82,9 @@ class LithiationProtocol:
         vertices = np.array([v for v, m in zip(voronoi.vertices, mask) if m.all()])
 
         distances = distance_array(
-            positions, vertices, box=frame.dimensions, backend="OpenMP"
+            vertices, frame.positions, box=frame.dimensions, backend="OpenMP"
         )
-        dmins = [np.min(dist[dist > 0] for dist in distances)]
+        dmins = [np.min(dist[dist > 0]) for dist in distances]
 
         sf = np.cbrt(box ** 3 + self.expansion_factor) / box
 
