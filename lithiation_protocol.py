@@ -53,7 +53,7 @@ class LithiationProtocol:
         min_press_frame = np.argmin(np.abs(press))
 
         u = mda.Universe("LixSi64.xyz")
-        u.trajectory.dimensions = np.array(3 * [box[min_press_frame]] + 3 * [90.0])
+        u.dimensions = np.array(3 * [box[min_press_frame]] + 3 * [90.0])
         u.trajectory.add_transformations(wrap(u.atoms))
 
         return u.trajectory[min_press_frame]
@@ -79,7 +79,7 @@ class LithiationProtocol:
         voronoi = Voronoi(positions)
 
         mask = (voronoi.vertices >= 0.0) & (voronoi.vertices < box)
-        vertices = [v for v, m in zip(voronoi.vertices, mask) if m.all()]
+        vertices = np.array([v for v, m in zip(voronoi.vertices, mask) if m.all()])
 
         distances = distance_array(
             positions, vertices, box=frame.dimensions, backend="OpenMP"
@@ -105,7 +105,7 @@ class LithiationProtocol:
     def run(self):
         if self.restart_from is None:
             u = mda.Universe("init/a-Si64.xyz")
-            u.trajectory.dimensions = np.array(3 * [self.box_size] + 3 * [90.0])
+            u.dimensions = np.array(3 * [self.box_size] + 3 * [90.0])
             u.trajectory.add_transformations(wrap(u.atoms))
             frame = u.trajectory[-1]
 

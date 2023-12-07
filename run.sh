@@ -11,7 +11,7 @@ mv LixSi64.gen lbfgs/
 cd lbfgs/
 
 # run lbfgs minimization
-dftb+
+./dftb+
 
 # copy the minimized structure to the npt dir 
 cp LixSi64.gen ../npt/
@@ -20,7 +20,7 @@ cp LixSi64.gen ../npt/
 cd ../npt/
 
 # run npt molecular dynamics simulation
-dftb+
+./dftb+
 
 # copy the generated files to the main dir
 cp md.out ../
