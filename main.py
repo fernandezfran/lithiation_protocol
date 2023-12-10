@@ -33,9 +33,9 @@ def main():
     ):
         parser.add_argument(f"--{flag}", help=description, default=default, type=dtype)
 
-    args = parser.parse_args()
+    args = vars(parser.parse_args())
 
-    lp = lithiation_protocol.LithiationProtocol(**vars(args))
+    lp = lithiation_protocol.LithiationProtocol(**args)
     lp.run()
 
 
